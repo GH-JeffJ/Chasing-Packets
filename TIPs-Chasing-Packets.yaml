@@ -1,0 +1,1111 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Description: "Chasing packets TIPs session environment template."
+
+Outputs:
+    Demo1SourceInstance:
+        Description: Private IP Address for the Demo1 Source Instance
+        Value: !GetAtt EC2Instance2.PrivateIp
+    Demo1TargetInstance:
+        Description: Private IP Address for the Demo1 Target Instance
+        Value: !GetAtt EC2Instance.PrivateIp
+    Demo2SourceInstance:
+        Description: Private IP Address for the Demo2 Source Instance
+        Value: !GetAtt EC2Instance4.PrivateIp
+    Demo2TargetInstance:
+        Description: Private IP Address for the Demo2 Target Instance
+        Value: !GetAtt EC2Instance5.PrivateIp
+    Demo3SourceInstance:
+        Description: Private IP Address for the Demo3 Source Instance
+        Value: !GetAtt EC2Instance6.PrivateIp
+    Demo3TargetInstance:
+        Description: Private IP Address for the Demo3 Target Instance
+        Value: !GetAtt EC2Instance3.PrivateIp
+    Demo3TargetInstancePublic:
+        Description: Public IP Address for the Demo3 Target Instance
+        Value: !GetAtt EC2Instance3.PublicIp
+    Demo4SourceInstance:
+        Description: Private IP Address for the Demo4 Source Instance
+        Value: !GetAtt EC2Instance7.PrivateIp
+Resources:
+#IAM Role - 1 total          
+    IAMRole7:
+        Type: "AWS::IAM::Role"
+        Properties:
+          Path: /
+          RoleName: EC2-SSM-Instance-Profile
+          AssumeRolePolicyDocument: >-
+            {"Version":"2012-10-17","Statement":[{"Effect":"Allow","Principal":{"Service":"ec2.amazonaws.com"},"Action":"sts:AssumeRole"}]}
+          MaxSessionDuration: 3600
+          ManagedPolicyArns:
+            - "arn:aws:iam::aws:policy/AmazonSSMManagedInstanceCore"
+          Description: Allows EC2 instances to call AWS services on your behalf.
+
+#IAM Instance - 1 total 
+    IAMInstanceProfile:
+        Type: "AWS::IAM::InstanceProfile"
+        Properties:
+            Path: "/"
+            InstanceProfileName: "EC2-SSM-Instance-Profile"
+            Roles: 
+              - "EC2-SSM-Instance-Profile"
+        DependsOn: IAMRole7
+#VPC's - 6 Total
+    EC2VPC:
+        Type: "AWS::EC2::VPC"
+        Properties:
+            CidrBlock: "10.10.0.0/16"
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: "default"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-vpc"
+
+    EC2VPC2:
+        Type: "AWS::EC2::VPC"
+        Properties:
+            CidrBlock: "10.50.0.0/16"
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: "default"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-b-vpc"
+
+    EC2VPC3:
+        Type: "AWS::EC2::VPC"
+        Properties:
+            CidrBlock: "10.40.0.0/16"
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: "default"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-vpc"
+
+    EC2VPC4:
+        Type: "AWS::EC2::VPC"
+        Properties:
+            CidrBlock: "10.0.0.0/16"
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: "default"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo1-vpc"
+
+    EC2VPC5:
+        Type: "AWS::EC2::VPC"
+        Properties:
+            CidrBlock: "10.30.0.0/16"
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: "default"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-b-vpc"
+
+    EC2VPC6:
+        Type: "AWS::EC2::VPC"
+        Properties:
+            CidrBlock: "10.20.0.0/16"
+            EnableDnsSupport: true
+            EnableDnsHostnames: true
+            InstanceTenancy: "default"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-a-vpc"
+
+#Subnets - 9 Total
+
+    EC2Subnet:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet2.AvailabilityZone
+            CidrBlock: "10.0.128.0/20"
+            VpcId: !Ref EC2VPC4
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo1-private1-subnet"
+
+    EC2Subnet2:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet3.AvailabilityZone
+            CidrBlock: "10.20.128.0/20"
+            VpcId: !Ref EC2VPC6
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-a-public1-subnet"
+
+    EC2Subnet3:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet4.AvailabilityZone
+            CidrBlock: "10.10.0.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-public1-subnet"
+
+    EC2Subnet4:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet5.AvailabilityZone
+            CidrBlock: "10.40.0.0/20"
+            VpcId: !Ref EC2VPC3
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-public1-subnet"
+
+    EC2Subnet5:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet6.AvailabilityZone
+            CidrBlock: "10.10.128.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-private1-subnet"
+
+    EC2Subnet6:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet7.AvailabilityZone
+            CidrBlock: "10.50.128.0/20"
+            VpcId: !Ref EC2VPC2
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-b-private1-subnet"
+
+    EC2Subnet7:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet8.AvailabilityZone
+            CidrBlock: "10.10.64.0/20"
+            VpcId: !Ref EC2VPC
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-public2-subnet"
+    EC2Subnet8:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !GetAtt EC2Subnet9.AvailabilityZone
+            CidrBlock: "10.30.128.0/20"
+            VpcId: !Ref EC2VPC5
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-b-public1-subnet"
+
+    EC2Subnet9:
+        Type: "AWS::EC2::Subnet"
+        Properties:
+            AvailabilityZone: !Sub "${AWS::Region}a"
+            CidrBlock: "10.40.64.0/20"
+            VpcId: !Ref EC2VPC3
+            MapPublicIpOnLaunch: false
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-private1-subnet"
+
+#IGW's - 4 total
+    EC2InternetGateway:
+        Type: "AWS::EC2::InternetGateway"
+        Properties:
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-b-igw"
+
+    EC2InternetGateway2:
+        Type: "AWS::EC2::InternetGateway"
+        Properties:
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-igw"
+
+    EC2InternetGateway3:
+        Type: "AWS::EC2::InternetGateway"
+        Properties:
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-a-igw"
+
+    EC2InternetGateway4:
+        Type: "AWS::EC2::InternetGateway"
+        Properties:
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-igw"
+#IGW Attachment
+    EC2VPCGatewayAttachment:
+        Type: "AWS::EC2::VPCGatewayAttachment"
+        Properties:
+            InternetGatewayId: !Ref EC2InternetGateway
+            VpcId: !Ref EC2VPC5
+
+    EC2VPCGatewayAttachment2:
+        Type: "AWS::EC2::VPCGatewayAttachment"
+        Properties:
+            InternetGatewayId: !Ref EC2InternetGateway2
+            VpcId: !Ref EC2VPC3
+
+    EC2VPCGatewayAttachment3:
+        Type: "AWS::EC2::VPCGatewayAttachment"
+        Properties:
+            InternetGatewayId: !Ref EC2InternetGateway3
+            VpcId: !Ref EC2VPC6
+
+    EC2VPCGatewayAttachment4:
+        Type: "AWS::EC2::VPCGatewayAttachment"
+        Properties:
+            InternetGatewayId: !Ref EC2InternetGateway4
+            VpcId: !Ref EC2VPC
+
+#EC2 Instances
+
+    EC2Instance:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0e1d30f2c40c4c701"
+            InstanceType: "t2.micro"
+            AvailabilityZone: !GetAtt EC2Subnet.AvailabilityZone
+            Tenancy: "default"
+            SubnetId: !Ref EC2Subnet
+            EbsOptimized: false
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 8
+                    SnapshotId: "snap-0b24702d996d654bc"
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            UserData: "IyEvYmluL2Jhc2ggLWV4CnN1ZG8geXVtIHVwZGF0ZSAteQpzdWRvIHl1bSBpbnN0YWxsIC15IGh0dHBkIHBocApzdWRvIHNlcnZpY2UgaHR0cGQgc3RhcnQKc3VkbyBzeXN0ZW1jdGwgZW5hYmxlIGh0dHBkLnNlcnZpY2UKY2QgL3Zhci93d3cvaHRtbAp3Z2V0IGh0dHBzOi8vZ2l0aHViLmNvbS9HSC1KZWZmSi9BcmNoLTctQXNzZXRzL3Jhdy9tYWluL0luc3RhbmNlRGF0YS1USVBzLnppcAp1bnppcCBJbnN0YW5jZURhdGEtVElQcy56aXA="
+            IamInstanceProfile: "EC2-SSM-Instance-Profile"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo1-Target-Instance"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+    EC2Instance2:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0e1d30f2c40c4c701"
+            InstanceType: "t2.micro"
+            AvailabilityZone: !GetAtt EC2Subnet.AvailabilityZone
+            Tenancy: "default"
+            SubnetId: !Ref EC2Subnet
+            EbsOptimized: false
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup2
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 8
+                    SnapshotId: "snap-0b24702d996d654bc"
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            IamInstanceProfile: "EC2-SSM-Instance-Profile"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo1-Source-Instance"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+
+    EC2Instance3:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0e1d30f2c40c4c701"
+            InstanceType: "t2.micro"
+            AvailabilityZone: !GetAtt EC2Subnet.AvailabilityZone
+            Tenancy: "default"
+            EbsOptimized: false
+            NetworkInterfaces: 
+            -   AssociatePublicIpAddress: "true"
+                DeviceIndex: "0"
+                GroupSet: 
+                - !Ref EC2SecurityGroup6
+                SubnetId: !Ref EC2Subnet8
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 8
+                    SnapshotId: "snap-0b24702d996d654bc"
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            UserData: "IyEvYmluL2Jhc2ggLWV4CnN1ZG8geXVtIHVwZGF0ZSAteQpzdWRvIHl1bSBpbnN0YWxsIC15IGh0dHBkIHBocApzdWRvIHNlcnZpY2UgaHR0cGQgc3RhcnQKc3VkbyBzeXN0ZW1jdGwgZW5hYmxlIGh0dHBkLnNlcnZpY2UKY2QgL3Zhci93d3cvaHRtbAp3Z2V0IGh0dHBzOi8vZ2l0aHViLmNvbS9HSC1KZWZmSi9BcmNoLTctQXNzZXRzL3Jhdy9tYWluL0luc3RhbmNlRGF0YS56aXAKdW56aXAgSW5zdGFuY2VEYXRhLnppcA=="
+            IamInstanceProfile: "EC2-SSM-Instance-Profile"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-Target-Instance"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+
+    EC2Instance4:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0e1d30f2c40c4c701"
+            InstanceType: "t2.micro"
+            AvailabilityZone: !GetAtt EC2Subnet.AvailabilityZone
+            Tenancy: "default"
+            NetworkInterfaces: 
+            -   AssociatePublicIpAddress: "true"
+                DeviceIndex: "0"
+                GroupSet: 
+                - !Ref EC2SecurityGroup3
+                SubnetId: !Ref EC2Subnet7
+            EbsOptimized: false
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 8
+                    SnapshotId: "snap-0b24702d996d654bc"
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            IamInstanceProfile: "EC2-SSM-Instance-Profile"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-Source-Instance"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+
+    EC2Instance5:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0e1d30f2c40c4c701"
+            InstanceType: "t2.micro"
+            AvailabilityZone: !GetAtt EC2Subnet.AvailabilityZone
+            Tenancy: "default"
+            SubnetId: !Ref EC2Subnet5
+            EbsOptimized: false
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup7
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 8
+                    SnapshotId: "snap-0b24702d996d654bc"
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            UserData: "IyEvYmluL2Jhc2ggLWV4CnN1ZG8geXVtIHVwZGF0ZSAteQpzdWRvIHl1bSBpbnN0YWxsIC15IGh0dHBkIHBocApzdWRvIHNlcnZpY2UgaHR0cGQgc3RhcnQKc3VkbyBzeXN0ZW1jdGwgZW5hYmxlIGh0dHBkLnNlcnZpY2UKY2QgL3Zhci93d3cvaHRtbAp3Z2V0IGh0dHBzOi8vZ2l0aHViLmNvbS9HSC1KZWZmSi9BcmNoLTctQXNzZXRzL3Jhdy9tYWluL0luc3RhbmNlRGF0YS56aXAKdW56aXAgSW5zdGFuY2VEYXRhLnppcA=="
+            IamInstanceProfile: "EC2-SSM-Instance-Profile"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-Target-Instance"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+
+    EC2Instance6:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0e1d30f2c40c4c701"
+            InstanceType: "t2.micro"
+            AvailabilityZone: !GetAtt EC2Subnet.AvailabilityZone
+            Tenancy: "default"
+            NetworkInterfaces: 
+            -   AssociatePublicIpAddress: "true"
+                DeviceIndex: "0"
+                GroupSet: 
+                - !Ref EC2SecurityGroup5
+                SubnetId: !Ref EC2Subnet2
+            EbsOptimized: false
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 8
+                    SnapshotId: "snap-0b24702d996d654bc"
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            IamInstanceProfile: "EC2-SSM-Instance-Profile"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-Source-Instance"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+
+    EC2Instance7:
+        Type: "AWS::EC2::Instance"
+        Properties:
+            ImageId: "ami-0e1d30f2c40c4c701"
+            InstanceType: "t2.micro"
+            AvailabilityZone: !GetAtt EC2Subnet.AvailabilityZone
+            Tenancy: "default"
+            SubnetId: !Ref EC2Subnet6
+            EbsOptimized: false
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup4
+            SourceDestCheck: true
+            BlockDeviceMappings: 
+              - 
+                DeviceName: "/dev/xvda"
+                Ebs: 
+                    Encrypted: false
+                    VolumeSize: 8
+                    SnapshotId: "snap-0b24702d996d654bc"
+                    VolumeType: "gp2"
+                    DeleteOnTermination: true
+            IamInstanceProfile: "EC2-SSM-Instance-Profile"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-Source-Instance"
+            HibernationOptions: 
+                Configured: false
+            EnclaveOptions: 
+                Enabled: false
+#SG - 
+    EC2SecurityGroup:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Demo1-Target-SG"
+            GroupName: "Demo1-Target-SG"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo1-target-sg"
+            VpcId: !Ref EC2VPC4
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                FromPort: 80
+                IpProtocol: "tcp"
+                ToPort: 80
+
+    EC2SecurityGroup2:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Demo1-Source-SG"
+            GroupName: "Demo1-Source-SG"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo1-source-sg"
+            VpcId: !Ref EC2VPC4
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "10.0.0.0/16"
+                IpProtocol: "-1"
+
+    EC2SecurityGroup3:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Demo2-Source-Instance-SG"
+            GroupName: "Demo2-Source-Instance-SG"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-source-sg"
+            VpcId: !Ref EC2VPC
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+
+    EC2SecurityGroup4:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Demo4-source-sg"
+            GroupName: "Demo4-source-sg"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-source-sg"
+            VpcId: !Ref EC2VPC2
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+
+    EC2SecurityGroup5:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Demo3-Source-SG"
+            GroupName: "Demo3-Source-SG"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-source-sg"
+            VpcId: !Ref EC2VPC6
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+
+    EC2SecurityGroup6:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Demo3-Target-SG"
+            GroupName: "Demo3-Target-SG"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-target-sg"
+            VpcId: !Ref EC2VPC5
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                Description: ""
+                FromPort: 80
+                IpProtocol: "tcp"
+                ToPort: 80
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+
+    EC2SecurityGroup7:
+        Type: "AWS::EC2::SecurityGroup"
+        Properties:
+            GroupDescription: "Demo2-Target-SG"
+            GroupName: "Demo2-Target-SG"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-target-sg"
+            VpcId: !Ref EC2VPC
+            SecurityGroupIngress: 
+              - 
+                CidrIp: "255.255.255.255/32"
+                Description: ""
+                FromPort: 80
+                IpProtocol: "tcp"
+                ToPort: 80
+            SecurityGroupEgress: 
+              - 
+                CidrIp: "0.0.0.0/0"
+                IpProtocol: "-1"
+
+#Interface Endpoints
+    EC2VPCEndpoint:
+        Type: "AWS::EC2::VPCEndpoint"
+        Properties:
+            VpcEndpointType: "Interface"
+            VpcId: !Ref EC2VPC4
+            ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssm"
+            PolicyDocument: |
+                {
+                  "Statement": [
+                    {
+                      "Action": "*", 
+                      "Effect": "Allow", 
+                      "Principal": "*", 
+                      "Resource": "*"
+                    }
+                  ]
+                }
+            SubnetIds: 
+              - !Ref EC2Subnet
+            PrivateDnsEnabled: true
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup2
+
+    EC2VPCEndpoint2:
+        Type: "AWS::EC2::VPCEndpoint"
+        Properties:
+            VpcEndpointType: "Interface"
+            VpcId: !Ref EC2VPC4
+            ServiceName: !Sub "com.amazonaws.${AWS::Region}.ssmmessages"
+            PolicyDocument: |
+                {
+                  "Statement": [
+                    {
+                      "Action": "*", 
+                      "Effect": "Allow", 
+                      "Principal": "*", 
+                      "Resource": "*"
+                    }
+                  ]
+                }
+            SubnetIds: 
+              - !Ref EC2Subnet
+            PrivateDnsEnabled: true
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup2
+
+    EC2VPCEndpoint3:
+        Type: "AWS::EC2::VPCEndpoint"
+        Properties:
+            VpcEndpointType: "Interface"
+            VpcId: !Ref EC2VPC4
+            ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2"
+            PolicyDocument: |
+                {
+                  "Statement": [
+                    {
+                      "Action": "*", 
+                      "Effect": "Allow", 
+                      "Principal": "*", 
+                      "Resource": "*"
+                    }
+                  ]
+                }
+            SubnetIds: 
+              - !Ref EC2Subnet
+            PrivateDnsEnabled: true
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup2
+
+    EC2VPCEndpoint4:
+        Type: "AWS::EC2::VPCEndpoint"
+        Properties:
+            VpcEndpointType: "Interface"
+            VpcId: !Ref EC2VPC4
+            ServiceName: !Sub "com.amazonaws.${AWS::Region}.ec2messages"
+            PolicyDocument: |
+                {
+                  "Statement": [
+                    {
+                      "Action": "*", 
+                      "Effect": "Allow", 
+                      "Principal": "*", 
+                      "Resource": "*"
+                    }
+                  ]
+                }
+            SubnetIds: 
+              - !Ref EC2Subnet
+            PrivateDnsEnabled: true
+            SecurityGroupIds: 
+              - !Ref EC2SecurityGroup2
+
+#Route Tables
+
+    EC2RouteTable2:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC5
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-b-public1-rtb"
+
+    EC2RouteTable6:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-private1-rtb"
+
+    EC2RouteTable7:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC3
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-private1-rtb"
+
+    EC2RouteTable8:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC3
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-public1-rtb"
+
+    EC2RouteTable9:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC4
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo1-private1-rtb"
+
+    EC2RouteTable11:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-public1-rtb"
+
+    EC2RouteTable12:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC2
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-b-private1-rtb"
+
+    EC2RouteTable13:
+        Type: "AWS::EC2::RouteTable"
+        Properties:
+            VpcId: !Ref EC2VPC6
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-a-public1-rtb"
+
+#Elastic IP's
+
+    EC2EIP:
+        Type: "AWS::EC2::EIP"
+        Properties:
+            Domain: "vpc"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-eip"
+
+    EC2EIP2:
+        Type: "AWS::EC2::EIP"
+        Properties:
+            Domain: "vpc"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-eip"
+
+#Nat-Gateways
+    EC2NatGateway:
+        Type: "AWS::EC2::NatGateway"
+        Properties:
+            SubnetId: !Ref EC2Subnet4
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-public-natgw"
+            AllocationId: !GetAtt EC2EIP2.AllocationId
+
+    EC2NatGateway2:
+        Type: "AWS::EC2::NatGateway"
+        Properties:
+            SubnetId: !Ref EC2Subnet3
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-public1-natgw"
+            AllocationId: !GetAtt EC2EIP.AllocationId
+
+#Peering Connection
+    EC2VPCPeeringConnection:
+        Type: "AWS::EC2::VPCPeeringConnection"
+        Properties:
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo3-peering-connection"
+            PeerVpcId: !Ref EC2VPC5
+            PeerOwnerId: !Ref AWS::AccountId
+            PeerRegion: !Ref AWS::Region
+            VpcId: !Ref EC2VPC6
+
+#Transit Gateway
+    EC2TransitGateway:
+        Type: "AWS::EC2::TransitGateway"
+        Properties:
+            Description: "Demo4-tgw"
+            AmazonSideAsn: 64520
+            AutoAcceptSharedAttachments: "disable"
+            DefaultRouteTableAssociation: "disable"
+            DefaultRouteTablePropagation: "disable"
+            DnsSupport: "enable"
+            VpnEcmpSupport: "disable"
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-tgw"
+
+#Transit Gateway Attachments
+    EC2TransitGatewayAttachment:
+        Type: "AWS::EC2::TransitGatewayAttachment"
+        Properties:
+            TransitGatewayId: !Ref EC2TransitGateway
+            Tags: 
+              - 
+                Key: "Name"
+                Value: Demo4-b-private-tgw-attachment
+            VpcId: !Ref EC2VPC2
+            SubnetIds: 
+              - !Ref EC2Subnet6
+
+    EC2TransitGatewayAttachment2:
+        Type: "AWS::EC2::TransitGatewayAttachment"
+        Properties:
+            TransitGatewayId: !Ref EC2TransitGateway
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-private-tgw-attachment-egress"
+            VpcId: !Ref EC2VPC3
+            SubnetIds: 
+              - !Ref EC2Subnet9
+
+#Transit Gateway Route Table
+    EC2TransitGatewayRouteTable:
+        Type: "AWS::EC2::TransitGatewayRouteTable"
+        Properties:
+            TransitGatewayId: !Ref EC2TransitGateway
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-a-tgw-rt-egress"
+
+    EC2TransitGatewayRouteTable2:
+        Type: "AWS::EC2::TransitGatewayRouteTable"
+        Properties:
+            TransitGatewayId: !Ref EC2TransitGateway
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo4-b-tgw-rt"
+
+#Transit Gateway Routes
+    EC2TransitGatewayRoute:
+        Type: "AWS::EC2::TransitGatewayRoute"
+        Properties:
+            DestinationCidrBlock: !GetAtt EC2VPC2.CidrBlock
+            TransitGatewayRouteTableId: !Ref EC2TransitGatewayRouteTable
+            TransitGatewayAttachmentId: !Ref EC2TransitGatewayAttachment
+
+    EC2TransitGatewayRoute2:
+        Type: "AWS::EC2::TransitGatewayRoute"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            TransitGatewayRouteTableId: !Ref EC2TransitGatewayRouteTable2
+            TransitGatewayAttachmentId: !Ref EC2TransitGatewayAttachment2
+
+#Transit Gateway Route Table Association
+    EC2TransitGatewayRouteTableAssociation:
+        Type: "AWS::EC2::TransitGatewayRouteTableAssociation"
+        Properties:
+            TransitGatewayAttachmentId: !Ref EC2TransitGatewayAttachment
+            TransitGatewayRouteTableId: !Ref EC2TransitGatewayRouteTable2
+
+    EC2TransitGatewayRouteTableAssociation2:
+        Type: "AWS::EC2::TransitGatewayRouteTableAssociation"
+        Properties:
+            TransitGatewayAttachmentId: !Ref EC2TransitGatewayAttachment2
+            TransitGatewayRouteTableId: !Ref EC2TransitGatewayRouteTable
+
+#Network ACL's
+    EC2NetworkAcl:
+        Type: "AWS::EC2::NetworkAcl"
+        Properties:
+            VpcId: !Ref EC2VPC
+            Tags: 
+              - 
+                Key: "Name"
+                Value: "Demo2-private-nacl"
+
+    EC2NetworkAclEntry:
+        Type: "AWS::EC2::NetworkAclEntry"
+        Properties:
+            CidrBlock: "0.0.0.0/0"
+            Egress: true
+            NetworkAclId: !Ref EC2NetworkAcl
+            Protocol: -1
+            RuleAction: "allow"
+            RuleNumber: 100
+
+
+    EC2SubnetNetworkAclAssociation:
+        Type: "AWS::EC2::SubnetNetworkAclAssociation"
+        Properties:
+            SubnetId: !Ref EC2Subnet5
+            NetworkAclId: !Ref EC2NetworkAcl
+
+#Route Table Associations
+    EC2SubnetRouteTableAssociation:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable2
+            SubnetId: !Ref EC2Subnet8
+
+    EC2SubnetRouteTableAssociation2:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable6
+            SubnetId: !Ref EC2Subnet5
+
+    EC2SubnetRouteTableAssociation3:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable7
+            SubnetId: !Ref EC2Subnet9
+
+    EC2SubnetRouteTableAssociation4:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable8
+            SubnetId: !Ref EC2Subnet4
+
+    EC2SubnetRouteTableAssociation5:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable9
+            SubnetId: !Ref EC2Subnet
+
+    EC2SubnetRouteTableAssociation6:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable11
+            SubnetId: !Ref EC2Subnet7
+
+    EC2SubnetRouteTableAssociation7:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable11
+            SubnetId: !Ref EC2Subnet3
+
+    EC2SubnetRouteTableAssociation8:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable12
+            SubnetId: !Ref EC2Subnet6
+
+    EC2SubnetRouteTableAssociation9:
+        Type: "AWS::EC2::SubnetRouteTableAssociation"
+        Properties:
+            RouteTableId: !Ref EC2RouteTable13
+            SubnetId: !Ref EC2Subnet2
+
+#Routes
+    EC2Route:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            GatewayId: !Ref EC2InternetGateway
+            RouteTableId: !Ref EC2RouteTable2
+
+    EC2Route2:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            NatGatewayId: !Ref EC2NatGateway2
+            RouteTableId: !Ref EC2RouteTable6
+        DependsOn: EC2Route
+
+    EC2Route3:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            NatGatewayId: !Ref EC2NatGateway
+            RouteTableId: !Ref EC2RouteTable7
+        DependsOn: EC2Route2
+
+    EC2Route4:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "10.50.0.0/16"
+            TransitGatewayId: !Ref EC2TransitGateway
+            RouteTableId: !Ref EC2RouteTable8
+        DependsOn: EC2Route3
+
+    EC2Route5:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            GatewayId: !Ref EC2InternetGateway2
+            RouteTableId: !Ref EC2RouteTable8
+        DependsOn: EC2Route4
+
+    EC2Route6:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            GatewayId: !Ref EC2InternetGateway4
+            RouteTableId: !Ref EC2RouteTable11
+        DependsOn: EC2Route5
+
+    EC2Route7:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            TransitGatewayId: !Ref EC2TransitGateway
+            RouteTableId: !Ref EC2RouteTable12
+        DependsOn: EC2Route6
+
+    EC2Route8:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "10.30.0.0/16"
+            VpcPeeringConnectionId: !Ref EC2VPCPeeringConnection
+            RouteTableId: !Ref EC2RouteTable13
+        DependsOn: EC2Route7
+
+    EC2Route9:
+        Type: "AWS::EC2::Route"
+        Properties:
+            DestinationCidrBlock: "0.0.0.0/0"
+            GatewayId: !Ref EC2InternetGateway3
+            RouteTableId: !Ref EC2RouteTable13
+        DependsOn: EC2Route8
