@@ -1,0 +1,2 @@
+The word doc contains a walk through of the various demo's, what is broke etc.
+The YAML file contains the CFN template to create the demo environment with errors injected.
